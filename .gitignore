@@ -1,0 +1,58 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.env
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Editors and IDEs
+.idea/  # For PyCharm/IntelliJ
+.vscode/ # For VS Code
+.cache/
+*.swp
+*~
+.DS_Store # macOS files
+
+# Testing and linting
+.coverage*
+htmlcov/
+.pytest_cache/
+
+# Databases
+*.db
+test_db.db # Common test database file name
+
+# Specific to FastAPI/Project artifacts
+log.txt
+site/
+__pypackages__/
+
+#Custom Files
+isolir_data.json
+copilot-instructions.md
