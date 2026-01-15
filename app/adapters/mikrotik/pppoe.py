@@ -105,7 +105,18 @@ def isolir_on_router(api, username: str) -> dict:
         result["found"] = True
         secret_id = secrets[0][".id"]
 
-        # 2. Disconnect active sessions
+        
+
+        # 2. Disable secret
+        # api.path("ppp", "secret").update(
+        #     **{".id": secret_id},
+        #     disabled="yes"
+        # )
+
+        # 3. Disconnect active sessions
+
+        result["secret_disabled"] = True
+
         actives = list(
             api.path("ppp", "active")
             .select(".id")
@@ -113,18 +124,12 @@ def isolir_on_router(api, username: str) -> dict:
         )
 
         # for a in actives:
-        #     api.path("ppp", "active").remove(**{".id": a[".id"]})
+        #     api.path("ppp", "active").remove(a[".id"])
 
         if(len(actives)):
             result["active_disconnected"] = True
 
-        # 3. Disable secret
-        # api.path("ppp", "secret").update(
-        #     **{".id": secret_id},
-        #     disabled="yes"
-        # )
-
-        result["secret_disabled"] = True
+       
 
         return result
     

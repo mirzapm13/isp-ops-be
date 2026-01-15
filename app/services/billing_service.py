@@ -154,7 +154,7 @@ def parse_excel_date(value):
 
 def bulk_isolir_from_file(file_bytes: bytes):
     df = read_billing_excel(file_bytes)
-    # df = df.head(100)
+    df = df.head(10)
 
     # Filter GPON,XPON,TPLINK,Static,null
     mask = (
@@ -219,7 +219,7 @@ def bulk_isolir_from_file(file_bytes: bytes):
 
 def import_gsheet_data(sheet_id: str, worksheet_gid: str):
     df = read_google_sheet(sheet_id, worksheet_gid)
-    # df = df.head(100)
+    df = df.head(10)
 
     # return df.replace({np.nan: None}).to_dict(orient="records")
 
