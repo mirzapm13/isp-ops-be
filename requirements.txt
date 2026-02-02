@@ -3,3 +3,16 @@ uvicorn
 librouteros
 pyyaml
 pandas
+html5lib
+lxml
+numpy
+openpyxl
+pandas
+psycopg2-binary
+pydantic
+pydantic_core
+python-dateutil
+python-dotenv
+python-multipart
+SQLAlchemy
+xlrd

@@ -3,6 +3,7 @@ import tempfile
 import os
 
 from app.adapters.billing.gsheet_reader import read_google_sheet
+from app.services.billing_reconcile_service import fetch_successful_payments_xls
 from app.services.billing_service import (
     bulk_isolir_from_file,
     import_billing_data,
@@ -118,3 +119,14 @@ def gdrive_isolir(
     result = import_gsheet_data(sheet_id, worksheet_gid)
 
     return result
+
+@router.post("/reconcile")
+def reconcile_billing():
+    df = fetch_successful_payments_xls()
+
+    # TEMP: just return row count to verify pipeline
+    return {
+        "status": "ok",
+        "rows": len(df),
+        "columns": list(df.columns),
+    }

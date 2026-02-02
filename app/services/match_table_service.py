@@ -12,6 +12,7 @@ def get_all_billing_active():
     Retrieve all active matches without billing information.
     Returns a list of active matches.
     """
+
     try:
         billing = get_all_billing()        # list[dict]
         active_pppoe = get_all_active()    # list[dict]
@@ -85,11 +86,13 @@ def get_active_no_billing():
         #Double IP
         double_df = billing_active_df.groupby('ip_secret').filter(lambda x: len(x) > 1).sort_values(by='ip_secret')
         double_df = double_df.groupby('nama_pelanggan').filter(lambda x: len(x) == 1).sort_values(by='ip_secret')
+        double_df = double_df.replace({np.nan: None})
         double_df = double_df.to_dict(orient="records")
 
         #Double Active
         double_active_df = billing_active_df.groupby('ip_secret').filter(lambda x: len(x) > 1).sort_values(by='ip_secret')
         double_active_df = billing_active_df.groupby('id').filter(lambda x: len(x) > 1).sort_values(by='name')
+        double_active_df = double_active_df.replace({np.nan: None})
         double_active_df = double_active_df.to_dict(orient="records")
 
         #Static IP

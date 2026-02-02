@@ -79,6 +79,7 @@ def get_pppoe_status(username: str):
                     "status": "ACTIVE",
                     "profile": secrets[0].get("profile"),
                     "name": secrets[0].get("name"),
+                    "password": secrets[0].get("password"),
                     "connection": {
                         "ip": active[0].get("address"),
                         "uptime": active[0].get("uptime")
@@ -94,6 +95,7 @@ def get_pppoe_status(username: str):
                     "status": "INACTIVE",
                     "profile": secrets[0].get("profile"),
                     "name": secrets[0].get("name"),
+                    "password": secrets[0].get("password"),
                     "connection": None
                 })
 
@@ -311,39 +313,49 @@ def change_profile( username: str, router_id: str, profile:str):
         if api:
             api.close()
 
+def resolve_target_routers(router_id: str):
+    if router_id == "all":
+        return ROUTERS
+    return [r for r in ROUTERS if r["id"] == router_id]
+
 def create_pppoe_secret(
     *,
-    router_id: str,
     name: str,
     password: str,
     profile: str,
-    enabled: bool,
-    comment: str | None = None,
+    comment: str,
+    disabled: bool,
+    router_id: str,
 ):
-    router = next((r for r in ROUTERS if r["id"] == router_id), None)
+    
+    routers = resolve_target_routers(router_id)
 
-    if not router:
-        return "ROUTER_NOT_FOUND"
+    results = []
 
-    api = None
-    try:
-        api = connect_router(router)
+    for router in routers:
+        try:
+            api = connect_router(router)
 
-        existing = api.path("ppp", "secret").print(where={"name": name})
-        if existing:
-            return "SECRET_ALREADY_EXISTS"
+            add_pppoe_secret(
+                api=api,
+                name=name,
+                password=password,
+                profile=profile,
+                comment=comment,
+                disabled=disabled,
+            )
 
-        add_pppoe_secret(
-            api,
-            name=name,
-            password=password,
-            profile=profile,
-            enabled=enabled,
-            comment=comment,
-        )
+            results.append({
+                "router_id": router["id"],
+                "status": "success",
+            })
 
-        return "CREATED"
+        except Exception as e:
+            results.append({
+                "router_id": router["id"],
+                "status": "failed",
+                "error": str(e),
+            })
 
-    finally:
-        if api:
-            api.close()
+    return results
+

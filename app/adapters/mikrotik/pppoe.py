@@ -5,6 +5,7 @@ from librouteros.query import Key
 
 name = Key('name')
 profile = Key('profile')
+password = Key('password')
 uptime = Key('uptime')
 disabled = Key('disabled')
 address = Key('address')
@@ -26,7 +27,7 @@ def find_all_secret(api):
 def find_secret(api, username: str):
     return list(
         api.path("ppp", "secret")
-           .select(name, profile, disabled, id)
+           .select(name, profile, disabled, id, password)
            .where(name == username)
     )
 
@@ -142,18 +143,28 @@ def add_pppoe_secret(
     name: str,
     password: str,
     profile: str,
-    enabled: bool = True,
+    disabled: str,
     comment: str | None = None,
 ):
-    payload = {
-        "name": name,
-        "password": password,
-        "service": "pppoe",
-        "profile": profile,
-        "disabled": "no" if enabled else "yes",
-    }
+    
+    try:
+        payload = {
+            "name": name,
+            "password": password,
+            "service": "pppoe",
+            "profile": profile,
+            "disabled": "yes" if disabled else "no",
+        }
 
-    if comment:
-        payload["comment"] = comment
+        if comment:
+            payload["comment"] = comment
 
-    return api.path("ppp", "secret").add(**payload)
+        secret_exist = find_secret(api, username=name)
+
+        if secret_exist:
+            raise Exception(f"Secret {name} already exist") 
+        
+        return api.path("ppp", "secret").add(**payload)
+
+    except Exception as e:
+        raise e

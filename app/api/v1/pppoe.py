@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Body
+from app.models.pppoe import PPPoESecretCreateRequest
 from app.services.pppoe_service import change_profile, create_pppoe_secret, delete_pppoe_secret, disable_pppoe_secret, disconnect_pppoe_active, enable_pppoe_secret, get_pppoe_status, list_pppoe_profiles
 from app.services.ping_service import ping_pppoe_user
 
@@ -193,33 +194,33 @@ def patch_profile(
         "router_id": router_id
     }
 
-@router.post("/")
-def add_pppoe(
-    router_id: str,
-    name: str,
-    password: str,
-    profile: str,
-    enabled: bool = True,
-    comment: str | None = None
-    ):
+@router.post("/secret")
+def create_secret(payload: PPPoESecretCreateRequest):
+    try: 
+        result = create_pppoe_secret(
+            name=payload.name,
+            password=payload.password,
+            profile=payload.profile,
+            comment=payload.comment,
+            disabled=payload.disabled,
+            router_id=payload.router,
+        )
 
-    result = create_pppoe_secret(router_id=router_id, name=name, password=password, profile=profile, enabled=enabled, comment=comment)
+        all_successful = all(item.get('status') == 'success' for item in result)
+        all_failed = all(item.get('status') == 'failed' for item in result)
 
-    if result == "ROUTER_NOT_FOUND":
-        raise HTTPException(status_code=404, detail="Router not found")
-
-    if result == "SECRET_ALREADY_EXISTS":
-        return {
-            "status": "NO_ACTION",
-            "message": "User secret already exist"
+        payload = {
+            "result": result
         }
 
-    if result != "CREATED":
-        raise HTTPException(status_code=500, detail=result)
+        if(all_successful):
+            payload["status"] = "success"
+        elif(all_failed):
+            payload["status"] = "failed"
+        else:
+            payload["status"] = "warning"
 
-    return {
-        "status": "SUCCESS",
-        "message": "User PPPoE secret created",
-        "username": name,
-        "router_id": router_id
-    }
+        return payload
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Internal Server Error")
