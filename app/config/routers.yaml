@@ -1,14 +1,14 @@
 - id: pop-1
   name: SATU
   host: 115.84.175.4
-  port: 4917
+  port: 14917
   username: ${POP1_CORE_USERNAME}
   password: ${POP1_CORE_PASSWORD}
 
 - id: pop-2
   name: DUA
   host: 115.84.175.2
-  port: 1730
+  port: 11730
   username: ${POP2_CORE_USERNAME}
   password: ${POP2_CORE_PASSWORD}
 

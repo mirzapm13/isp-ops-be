@@ -2,14 +2,14 @@ from fastapi import APIRouter, Body, HTTPException, UploadFile, File
 import tempfile
 import os
 
-from app.adapters.billing.gsheet_reader import read_google_sheet
+
 from app.services.billing_reconcile_service import fetch_successful_payments_xls
 from app.services.billing_service import (
     bulk_isolir_from_file,
     import_billing_data,
-    import_gsheet_data,
     insert_billing_records,
-    get_billing_by_ip_secret
+    get_billing_by_ip_secret,
+    isolir_from_gsheet
 )
 
 router = APIRouter(
@@ -116,17 +116,27 @@ def gdrive_isolir(
     sheet_id: str = Body(..., embed=True),
     worksheet_gid: str = Body(..., embed=True)
 ):
-    result = import_gsheet_data(sheet_id, worksheet_gid)
+    result = isolir_from_gsheet(sheet_id, worksheet_gid)
 
     return result
 
 @router.post("/reconcile")
 def reconcile_billing():
-    df = fetch_successful_payments_xls()
 
-    # TEMP: just return row count to verify pipeline
-    return {
-        "status": "ok",
-        "rows": len(df),
-        "columns": list(df.columns),
-    }
+    try:
+        df = fetch_successful_payments_xls()
+        # return df
+
+        # TEMP: just return row count to verify pipeline
+        return {
+            "status": "ok",
+            "rows": len(df),
+            # "columns": list(df.columns),
+            "data": df.to_dict(orient="records")
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to reconcile payment data: {str(e)}"
+        )

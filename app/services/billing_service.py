@@ -5,7 +5,7 @@ from decimal import Decimal, InvalidOperation
 from app.adapters.billing.gsheet_reader import read_google_sheet
 from app.config.database import engine
 from app.models.billing import BillingCustomer
-from sqlalchemy import text
+from sqlalchemy import text, types
 import pandas as pd
 from datetime import date, timedelta
 from app.config.database import SessionLocal
@@ -61,6 +61,7 @@ def import_billing_data(file_path: str, filename: str):
         records.append({
         "id_pelanggan": row.get("id_pelanggan"),
         "ip_secret": row.get("ip_secret"),
+        "tlp": row.get("tlp"),
 
         "nama_pelanggan": row.get("nama_pelanggan"),
         "nama_langganan": row.get("nama_langganan"),
@@ -92,6 +93,7 @@ def insert_billing_records(records: list[dict]) -> None:
 
     with engine.begin() as conn:
         # 1. Remove all existing billing data
+        BillingCustomer.metadata.create_all(engine)
         conn.execute(text("TRUNCATE TABLE billing_customers RESTART IDENTITY"))
 
         # 2. Bulk insert new records
@@ -217,8 +219,9 @@ def bulk_isolir_from_file(file_bytes: bytes):
 
     return summary
 
-def import_gsheet_data(sheet_id: str, worksheet_gid: str):
+def isolir_from_gsheet(sheet_id: str, worksheet_gid: str):
     df = read_google_sheet(sheet_id, worksheet_gid)
+    insert_to_db(df)
     # df = df.head(100)
 
     # return df.replace({np.nan: None}).to_dict(orient="records")
@@ -283,3 +286,25 @@ def import_gsheet_data(sheet_id: str, worksheet_gid: str):
         isolir_report.to_excel(writer, sheet_name='report', index=False)
 
     return summary
+
+def insert_to_db(df):
+
+    dtype ={
+        'No': types.SMALLINT(),
+        'Nominal Pembayaran': types.Numeric(12,2)
+    }
+
+    try:
+        with engine.begin() as conn:
+            conn.execute(text("TRUNCATE TABLE isolir_list"))
+            df.to_sql(
+                "isolir_list",
+                con=conn,
+                if_exists="append",
+                index=False,
+                chunksize=500,
+                method="multi",
+                dtype=dtype
+            )
+    except Exception as e:
+        raise e

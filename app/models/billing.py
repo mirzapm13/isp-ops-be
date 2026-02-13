@@ -9,8 +9,9 @@ class BillingCustomer(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    id_pelanggan = Column(String)
-    ip_secret = Column(String, index=True, nullable=False)
+    id_pelanggan = Column(String, index=True,nullable=False)
+    ip_secret = Column(String)
+    tlp = Column(String, nullable=False)
 
     nama_pelanggan = Column(String)
     nama_langganan = Column(String)
