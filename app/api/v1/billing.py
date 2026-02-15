@@ -124,16 +124,11 @@ def gdrive_isolir(
 def reconcile_billing():
 
     try:
-        df = fetch_successful_payments_xls()
+        payload = fetch_successful_payments_xls()
         # return df
 
         # TEMP: just return row count to verify pipeline
-        return {
-            "status": "ok",
-            "rows": len(df),
-            # "columns": list(df.columns),
-            "data": df.to_dict(orient="records")
-        }
+        return payload
     
     except Exception as e:
         raise HTTPException(
