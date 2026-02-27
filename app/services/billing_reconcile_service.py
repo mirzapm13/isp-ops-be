@@ -181,9 +181,11 @@ def fetch_successful_payments_xls() :
                 
                 else:
                 #Enable SMARTOLT
-                    adapter.enable_onu(
+                    res=adapter.enable_onu(
                             onu_id=row['ip_secret'],
                         )
+                    
+                    print(row['ip_secret'],res)
                 
                 # 2. Mark processed immediately
                 with engine.begin() as conn:
