@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.v1 import match_table, pppoe, routers, health, billing
+from app.api.v1 import match_table, pppoe, routers, health, billing, auth, users
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -23,3 +23,6 @@ app.include_router(pppoe.router, prefix="/api/v1")
 app.include_router(routers.router, prefix="/api/v1")
 app.include_router(billing.router, prefix="/api/v1")
 app.include_router(match_table.router, prefix="/api/v1")
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(users.router, prefix="/api/v1")
+

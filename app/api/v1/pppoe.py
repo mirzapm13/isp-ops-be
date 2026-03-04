@@ -1,11 +1,13 @@
-from fastapi import APIRouter, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body
 from app.models.pppoe import PPPoESecretCreateRequest
+from app.security.auth import get_current_user
 from app.services.pppoe_service import change_profile, create_pppoe_secret, delete_pppoe_secret, disable_pppoe_secret, disconnect_pppoe_active, enable_pppoe_secret, get_pppoe_status, list_pppoe_profiles
 from app.services.ping_service import ping_pppoe_user
 
 router = APIRouter(
     prefix="/pppoe",
-    tags=["PPPoE"]
+    tags=["PPPoE"],
+    dependencies=[Depends(get_current_user)]
 )
 
 @router.get("/{username}")

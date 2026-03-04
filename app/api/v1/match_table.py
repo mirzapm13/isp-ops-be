@@ -1,10 +1,12 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.security.auth import get_current_user
 from app.services.match_table_service import get_active_no_billing
 
 router = APIRouter(
     prefix="/match-table",
-    tags=["Match Table"]
+    tags=["Match Table"],
+    dependencies=[Depends(get_current_user)]
 )
 
 @router.get("")

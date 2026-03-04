@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Body, HTTPException, UploadFile, File
+from fastapi import APIRouter, Body, Depends, HTTPException, UploadFile, File
 import tempfile
 import os
 
 
+from app.models.user import User
+from app.security.auth import get_current_user
 from app.services.billing_reconcile_service import fetch_successful_payments_xls
 from app.services.billing_service import (
     bulk_isolir_from_file,
@@ -49,7 +51,7 @@ async def import_billing(file: UploadFile = File(...)):
         os.unlink(tmp_path)
 
 @router.get("/customers/{ip_secret}")
-def get_billing_customer(ip_secret: str):
+def get_billing_customer(ip_secret: str, current_user: User = Depends(get_current_user)):
     rows = get_billing_by_ip_secret(ip_secret)
 
     return {
