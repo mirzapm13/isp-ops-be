@@ -230,7 +230,7 @@ def isolir_from_gsheet(sheet_id: str, worksheet_gid: str):
     mask = (
         df["IP Address / Secret"].astype(str).str.contains(r"[A-Za-z]") &
         df["IP Address / Secret"].astype(str).str.contains(r"\d") &
-        df["Catatan"].isna()
+        df["mas Mirza"].isna()
     )
 
     # Filter GPON,XPON,TPLINK,Static,null
