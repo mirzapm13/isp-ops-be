@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from app.models.pppoe import PPPoESecretCreateRequest
 from app.security.auth import get_current_user
-from app.services.pppoe_service import change_profile, create_pppoe_secret, delete_pppoe_secret, disable_pppoe_secret, disconnect_pppoe_active, enable_pppoe_secret, get_pppoe_status, list_pppoe_profiles
+from app.services.pppoe_service import change_profile, change_remote_address, create_pppoe_secret, delete_pppoe_secret, disable_pppoe_secret, disconnect_pppoe_active, enable_pppoe_secret, get_pppoe_status, list_pppoe_profiles
 from app.services.ping_service import ping_pppoe_user
 
 router = APIRouter(
@@ -226,3 +226,24 @@ def create_secret(payload: PPPoESecretCreateRequest):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal Server Error")
+    
+@router.get("/remote/")
+def remote_client(ip: str, router_id: str):
+    result = None
+
+    try: 
+        result = change_remote_address(ip,router_id)
+
+        if result is None:
+            raise HTTPException(
+                status_code=404,
+                detail="IP not found"
+            )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error changing to addresses: {e}"
+        )
+    
+    return result

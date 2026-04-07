@@ -1,6 +1,6 @@
 from app.config.settings import ROUTERS
 from app.adapters.mikrotik.client import connect_router
-from app.adapters.mikrotik.pppoe import add_pppoe_secret, change_pppoe_profile, delete_secret, get_pppoe_profiles, isolir_on_router,disable_secret, enable_secret, find_all_active, find_all_secret, find_secret, find_active, disconnect_active
+from app.adapters.mikrotik.pppoe import add_pppoe_secret, change_nat_to_addresses, change_pppoe_profile, delete_secret, get_pppoe_profiles, isolir_on_router,disable_secret, enable_secret, find_all_active, find_all_secret, find_secret, find_active, disconnect_active
 import pandas as pd
 import numpy as np
 
@@ -359,3 +359,30 @@ def create_pppoe_secret(
 
     return results
 
+def change_remote_address(ip: str, router_id):
+    routers = resolve_target_routers(router_id)
+    # print(routers)
+    result = {"updated": False}
+
+    for router in routers:
+        api = None
+
+        try:
+            api = connect_router(router)
+
+            res=change_nat_to_addresses(
+                api=api,
+                ip=ip
+            )
+
+            result = res
+            
+
+        except Exception as e:
+            raise Exception(f"{router['name']} failed: {str(e)}")
+
+        finally:
+            if api:
+                api.close()
+
+    return result

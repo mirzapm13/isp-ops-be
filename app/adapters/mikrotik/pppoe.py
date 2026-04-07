@@ -11,6 +11,10 @@ disabled = Key('disabled')
 address = Key('address')
 comment = Key('comment')
 id = Key('.id')
+to_addresses = Key('to_addresses')
+dst_port = Key('dst-port')
+dst_addresses = Key('dst-address')
+
 
 def find_all_active(api):
     return list(
@@ -168,3 +172,26 @@ def add_pppoe_secret(
 
     except Exception as e:
         raise e
+    
+def change_nat_to_addresses(api, ip: str):
+
+    result = list(
+        api.path('ip', 'firewall', 'nat')
+        .select(".id", comment,dst_addresses, to_addresses, dst_port)
+        .where(comment == 'REMOT MODEM')
+    )
+
+    if not result:
+        raise Exception("NAT rule not found")
+
+    nat_id = result[0]['.id']
+    router_ip = f"{result[0]['dst-address']}:{result[0]['dst-port']}"
+
+    api.path('ip', 'firewall', 'nat').update(
+        **{
+            ".id": nat_id,
+            "to-addresses": ip
+        }
+    )
+
+    return {"updated": True,"ip": router_ip}
