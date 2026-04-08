@@ -6,3 +6,4 @@ from .role import Role
 from .permission import Permission
 from .user_role import user_roles
 from .role_permission import role_permissions
+from .log import Log

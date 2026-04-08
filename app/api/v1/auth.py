@@ -12,12 +12,20 @@ from app.security.auth import (
     create_refresh_token,
     get_current_user,
 )
+from app.services.log_service import log_event
 
 import jwt
 from jwt import PyJWTError
 from app.security.auth import SECRET_KEY, ALGORITHM
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
+
+
+def _safe_log(db: Session, **kwargs):
+    try:
+        log_event(db, **kwargs)
+    except Exception:
+        db.rollback()
 
 
 # =====================================================
@@ -30,6 +38,15 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     user = authenticate_user(db, payload.username, payload.password)
 
     if not user:
+        _safe_log(
+            db,
+            event_type="AUTH_LOGIN_FAILED",
+            entity_type="user",
+            entity_id=payload.username,
+            message="Login failed: wrong username or password",
+            payload={"username": payload.username},
+            severity="WARNING",
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Wrong username or password"
@@ -37,6 +54,15 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
 
     access_token = create_access_token(user)
     refresh_token = create_refresh_token(user.id)
+
+    _safe_log(
+        db,
+        event_type="AUTH_LOGIN_SUCCESS",
+        entity_type="user",
+        entity_id=str(user.id),
+        message="Login successful",
+        payload={"username": user.username},
+    )
 
     return {
         "access_token": access_token,
@@ -81,6 +107,15 @@ def refresh(payload: dict, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="User not found")
 
     new_access_token = create_access_token(user)
+
+    # _safe_log(
+    #     db,
+    #     event_type="AUTH_TOKEN_REFRESHED",
+    #     entity_type="user",
+    #     entity_id=str(user.id),
+    #     message="Access token refreshed",
+    #     payload={"username": user.username},
+    # )
 
     return {
         "access_token": new_access_token,

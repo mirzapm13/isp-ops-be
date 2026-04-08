@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
+from sqlalchemy.orm import Session
 from app.models.pppoe import PPPoESecretCreateRequest
-from app.security.auth import get_current_user
+from app.models.user import User
+from app.security.auth import get_current_user, get_db
 from app.services.pppoe_service import change_profile, change_remote_address, create_pppoe_secret, delete_pppoe_secret, disable_pppoe_secret, disconnect_pppoe_active, enable_pppoe_secret, get_pppoe_status, list_pppoe_profiles
 from app.services.ping_service import ping_pppoe_user
 
@@ -197,7 +199,11 @@ def patch_profile(
     }
 
 @router.post("/secret")
-def create_secret(payload: PPPoESecretCreateRequest):
+def create_secret(
+    payload: PPPoESecretCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     try: 
         result = create_pppoe_secret(
             name=payload.name,
@@ -206,6 +212,8 @@ def create_secret(payload: PPPoESecretCreateRequest):
             comment=payload.comment,
             disabled=payload.disabled,
             router_id=payload.router,
+            db=db,
+            requested_by=current_user.username,
         )
 
         all_successful = all(item.get('status') == 'success' for item in result)

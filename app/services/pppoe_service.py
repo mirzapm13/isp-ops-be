@@ -1,8 +1,19 @@
 from app.config.settings import ROUTERS
 from app.adapters.mikrotik.client import connect_router
 from app.adapters.mikrotik.pppoe import add_pppoe_secret, change_nat_to_addresses, change_pppoe_profile, delete_secret, get_pppoe_profiles, isolir_on_router,disable_secret, enable_secret, find_all_active, find_all_secret, find_secret, find_active, disconnect_active
+from app.services.log_service import log_event
 import pandas as pd
 import numpy as np
+from sqlalchemy.orm import Session
+
+
+def _safe_log(db: Session | None, **kwargs):
+    if db is None:
+        return
+    try:
+        log_event(db, **kwargs)
+    except Exception:
+        db.rollback()
 
 def get_all_active():
     """
@@ -326,13 +337,32 @@ def create_pppoe_secret(
     comment: str,
     disabled: bool,
     router_id: str,
+    db: Session | None = None,
+    requested_by: str | None = None,
 ):
     
     routers = resolve_target_routers(router_id)
 
+    _safe_log(
+        db,
+        event_type="PPPOE_SECRET_CREATE_REQUESTED",
+        entity_type="pppoe_secret",
+        entity_id=name,
+        message="Create PPPoE secret requested",
+        payload={
+            "name": name,
+            "profile": profile,
+            "disabled": disabled,
+            "router_id": router_id,
+            "routers_count": len(routers),
+            "requested_by": requested_by,
+        },
+    )
+
     results = []
 
     for router in routers:
+        api = None
         try:
             api = connect_router(router)
 
@@ -349,6 +379,21 @@ def create_pppoe_secret(
                 "router_id": router["id"],
                 "status": "success",
             })
+            _safe_log(
+                db,
+                event_type="PPPOE_SECRET_CREATED",
+                entity_type="pppoe_secret",
+                entity_id=name,
+                message="PPPoE secret created on router",
+                payload={
+                    "name": name,
+                    "profile": profile,
+                    "disabled": disabled,
+                    "router_id": router["id"],
+                    "router_name": router.get("name"),
+                    "requested_by": requested_by,
+                },
+            )
 
         except Exception as e:
             results.append({
@@ -356,6 +401,45 @@ def create_pppoe_secret(
                 "status": "failed",
                 "error": str(e),
             })
+            _safe_log(
+                db,
+                event_type="PPPOE_SECRET_CREATE_FAILED",
+                entity_type="pppoe_secret",
+                entity_id=name,
+                message="Failed creating PPPoE secret on router",
+                payload={
+                    "name": name,
+                    "profile": profile,
+                    "disabled": disabled,
+                    "router_id": router["id"],
+                    "router_name": router.get("name"),
+                    "requested_by": requested_by,
+                    "error": str(e),
+                },
+                severity="ERROR",
+            )
+        finally:
+            if api:
+                api.close()
+
+    success_count = sum(1 for item in results if item.get("status") == "success")
+    failed_count = sum(1 for item in results if item.get("status") == "failed")
+    _safe_log(
+        db,
+        event_type="PPPOE_SECRET_CREATE_SUMMARY",
+        entity_type="pppoe_secret",
+        entity_id=name,
+        message="Create PPPoE secret request completed",
+        payload={
+            "name": name,
+            "requested_by": requested_by,
+            "target_router_id": router_id,
+            "total": len(results),
+            "success": success_count,
+            "failed": failed_count,
+        },
+        severity="ERROR" if failed_count > 0 else "INFO",
+    )
 
     return results
 
