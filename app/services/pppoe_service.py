@@ -127,9 +127,23 @@ def get_pppoe_status(username: str):
         "has_multiple_matches": len(matches) > 1
     }
 
-def disconnect_pppoe_active(router_id: str, username: str):
+def disconnect_pppoe_active(
+    router_id: str,
+    username: str,
+    db: Session | None = None,
+    requested_by: str | None = None,
+):
     router = next((r for r in ROUTERS if r["id"] == router_id), None)
     if not router:
+        _safe_log(
+            db,
+            event_type="PPPOE_DEACTIVATE_FAILED",
+            entity_type="pppoe_secret",
+            entity_id=username,
+            message="Router not found for deactivate",
+            payload={"username": username, "router_id": router_id, "requested_by": requested_by},
+            severity="WARNING",
+        )
         return "ROUTER_NOT_FOUND"
 
     api = None
@@ -139,25 +153,71 @@ def disconnect_pppoe_active(router_id: str, username: str):
 
         actives = find_active(api, username)
         if not actives:
+            _safe_log(
+                db,
+                event_type="PPPOE_DEACTIVATE_NO_ACTION",
+                entity_type="pppoe_secret",
+                entity_id=username,
+                message="User is not active",
+                payload={"username": username, "router_id": router_id, "requested_by": requested_by},
+                severity="WARNING",
+            )
             return "USER_NOT_ACTIVE"
 
         for a in actives:
             disconnect_active(api, a[".id"])
             # print(a[".id"])
+
+        _safe_log(
+            db,
+            event_type="PPPOE_DEACTIVATED",
+            entity_type="pppoe_secret",
+            entity_id=username,
+            message="Active PPPoE session disconnected",
+            payload={
+                "username": username,
+                "router_id": router_id,
+                "requested_by": requested_by,
+                "disconnected_count": len(actives),
+            },
+        )
     
         return "DISCONNECTED"
 
     except Exception as e:
+        _safe_log(
+            db,
+            event_type="PPPOE_DEACTIVATE_FAILED",
+            entity_type="pppoe_secret",
+            entity_id=username,
+            message="Failed to deactivate PPPoE session",
+            payload={"username": username, "router_id": router_id, "requested_by": requested_by, "error": str(e)},
+            severity="ERROR",
+        )
         raise e
 
     finally:
         if api:
             api.close()
 
-def disable_pppoe_secret(router_id: str, username: str):
+def disable_pppoe_secret(
+    router_id: str,
+    username: str,
+    db: Session | None = None,
+    requested_by: str | None = None,
+):
     router = next((r for r in ROUTERS if r["id"] == router_id), None)
 
     if not router:
+        _safe_log(
+            db,
+            event_type="PPPOE_DISABLE_FAILED",
+            entity_type="pppoe_secret",
+            entity_id=username,
+            message="Router not found for disable",
+            payload={"username": username, "router_id": router_id, "requested_by": requested_by},
+            severity="WARNING",
+        )
         return "ROUTER_NOT_FOUND"
 
     api = None
@@ -167,24 +227,70 @@ def disable_pppoe_secret(router_id: str, username: str):
 
         secrets = find_secret(api, username)
         if not secrets:
+            _safe_log(
+                db,
+                event_type="PPPOE_DISABLE_NO_ACTION",
+                entity_type="pppoe_secret",
+                entity_id=username,
+                message="User secret not available",
+                payload={"username": username, "router_id": router_id, "requested_by": requested_by},
+                severity="WARNING",
+            )
             return "USER_NOT_AVAILABLE"
 
         for a in secrets:
             disable_secret(api, a[".id"])
             # print(a[".id"])
+
+        _safe_log(
+            db,
+            event_type="PPPOE_DISABLED",
+            entity_type="pppoe_secret",
+            entity_id=username,
+            message="PPPoE secret disabled",
+            payload={
+                "username": username,
+                "router_id": router_id,
+                "requested_by": requested_by,
+                "affected_count": len(secrets),
+            },
+        )
     
         return "DISABLED"
 
     except Exception as e:
+        _safe_log(
+            db,
+            event_type="PPPOE_DISABLE_FAILED",
+            entity_type="pppoe_secret",
+            entity_id=username,
+            message="Failed to disable PPPoE secret",
+            payload={"username": username, "router_id": router_id, "requested_by": requested_by, "error": str(e)},
+            severity="ERROR",
+        )
         raise e
 
     finally:
         if api:
             api.close()
 
-def enable_pppoe_secret(router_id: str, username: str):
+def enable_pppoe_secret(
+    router_id: str,
+    username: str,
+    db: Session | None = None,
+    requested_by: str | None = None,
+):
     router = next((r for r in ROUTERS if r["id"] == router_id), None)
     if not router:
+        _safe_log(
+            db,
+            event_type="PPPOE_ENABLE_FAILED",
+            entity_type="pppoe_secret",
+            entity_id=username,
+            message="Router not found for enable",
+            payload={"username": username, "router_id": router_id, "requested_by": requested_by},
+            severity="WARNING",
+        )
         return "ROUTER_NOT_FOUND"
 
     api = None
@@ -194,14 +300,46 @@ def enable_pppoe_secret(router_id: str, username: str):
 
         secrets = find_secret(api, username)
         if not secrets:
+            _safe_log(
+                db,
+                event_type="PPPOE_ENABLE_NO_ACTION",
+                entity_type="pppoe_secret",
+                entity_id=username,
+                message="User secret not available",
+                payload={"username": username, "router_id": router_id, "requested_by": requested_by},
+                severity="WARNING",
+            )
             return "USER_NOT_AVAILABLE"
 
         for a in secrets:
             enable_secret(api, a[".id"])
+
+        _safe_log(
+            db,
+            event_type="PPPOE_ENABLED",
+            entity_type="pppoe_secret",
+            entity_id=username,
+            message="PPPoE secret enabled",
+            payload={
+                "username": username,
+                "router_id": router_id,
+                "requested_by": requested_by,
+                "affected_count": len(secrets),
+            },
+        )
     
         return "ENABLED"
 
     except Exception as e:
+        _safe_log(
+            db,
+            event_type="PPPOE_ENABLE_FAILED",
+            entity_type="pppoe_secret",
+            entity_id=username,
+            message="Failed to enable PPPoE secret",
+            payload={"username": username, "router_id": router_id, "requested_by": requested_by, "error": str(e)},
+            severity="ERROR",
+        )
         raise e
 
     finally:
@@ -229,9 +367,23 @@ def list_pppoe_profiles(router_id: str):
         if api:
             api.close()
 
-def delete_pppoe_secret(router_id: str, username: str):
+def delete_pppoe_secret(
+    router_id: str,
+    username: str,
+    db: Session | None = None,
+    requested_by: str | None = None,
+):
     router = next((r for r in ROUTERS if r["id"] == router_id), None)
     if not router:
+        _safe_log(
+            db,
+            event_type="PPPOE_DELETE_FAILED",
+            entity_type="pppoe_secret",
+            entity_id=username,
+            message="Router not found for delete",
+            payload={"username": username, "router_id": router_id, "requested_by": requested_by},
+            severity="WARNING",
+        )
         return "ROUTER_NOT_FOUND"
 
     api = None
@@ -241,15 +393,47 @@ def delete_pppoe_secret(router_id: str, username: str):
 
         secrets = find_secret(api, username)
         if not secrets:
+            _safe_log(
+                db,
+                event_type="PPPOE_DELETE_NO_ACTION",
+                entity_type="pppoe_secret",
+                entity_id=username,
+                message="User secret not available",
+                payload={"username": username, "router_id": router_id, "requested_by": requested_by},
+                severity="WARNING",
+            )
             return "USER_NOT_AVAILABLE"
 
         for a in secrets:
             delete_secret(api, a[".id"])
             # print(a[".id"])
+
+        _safe_log(
+            db,
+            event_type="PPPOE_DELETED",
+            entity_type="pppoe_secret",
+            entity_id=username,
+            message="PPPoE secret deleted",
+            payload={
+                "username": username,
+                "router_id": router_id,
+                "requested_by": requested_by,
+                "affected_count": len(secrets),
+            },
+        )
     
         return "DELETED"
 
     except Exception as e:
+        _safe_log(
+            db,
+            event_type="PPPOE_DELETE_FAILED",
+            entity_type="pppoe_secret",
+            entity_id=username,
+            message="Failed to delete PPPoE secret",
+            payload={"username": username, "router_id": router_id, "requested_by": requested_by, "error": str(e)},
+            severity="ERROR",
+        )
         raise e
 
     finally:

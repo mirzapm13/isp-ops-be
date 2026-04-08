@@ -69,9 +69,16 @@ def ping_user(
 @router.post("/{username}/deactivate")
 def disconnect_user(
         username: str,
-        router_id: str = Body(..., embed=True)
+        router_id: str = Body(..., embed=True),
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
     ):
-    result = disconnect_pppoe_active(router_id, username)
+    result = disconnect_pppoe_active(
+        router_id,
+        username,
+        db=db,
+        requested_by=current_user.username,
+    )
 
     if result == "ROUTER_NOT_FOUND":
         raise HTTPException(status_code=404, detail="Router not found")
@@ -95,9 +102,16 @@ def disconnect_user(
 @router.post("/{username}/disable")
 def disable_user(
         username: str,
-        router_id: str = Body(..., embed=True)
+        router_id: str = Body(..., embed=True),
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
     ):
-    result = disable_pppoe_secret(router_id, username)
+    result = disable_pppoe_secret(
+        router_id,
+        username,
+        db=db,
+        requested_by=current_user.username,
+    )
 
     if result == "ROUTER_NOT_FOUND":
         raise HTTPException(status_code=404, detail="Router not found")
@@ -121,9 +135,16 @@ def disable_user(
 @router.post("/{username}/enable")
 def enable_user(
         username: str,
-        router_id: str = Body(..., embed=True)
+        router_id: str = Body(..., embed=True),
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
     ):
-    result = enable_pppoe_secret(router_id, username)
+    result = enable_pppoe_secret(
+        router_id,
+        username,
+        db=db,
+        requested_by=current_user.username,
+    )
 
     if result == "ROUTER_NOT_FOUND":
         raise HTTPException(status_code=404, detail="Router not found")
@@ -147,9 +168,16 @@ def enable_user(
 @router.post("/{username}/delete")
 def delete_user(
     username: str,
-    router_id: str = Body(..., embed=True)
+    router_id: str = Body(..., embed=True),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    result = delete_pppoe_secret(router_id, username)
+    result = delete_pppoe_secret(
+        router_id,
+        username,
+        db=db,
+        requested_by=current_user.username,
+    )
 
     if result == "ROUTER_NOT_FOUND":
         raise HTTPException(status_code=404, detail="Router not found")
