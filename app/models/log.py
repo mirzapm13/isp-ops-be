@@ -11,6 +11,8 @@ class Log(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
+    actor_type: Mapped[str] = mapped_column(String(50))
+    actor_id: Mapped[str] = mapped_column(String(50))
     event_type: Mapped[str] = mapped_column(String(50), nullable=False)
     entity_type: Mapped[str] = mapped_column(String(50), nullable=False)
     entity_id: Mapped[str | None] = mapped_column(String(100))

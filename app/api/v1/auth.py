@@ -40,6 +40,8 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     if not user:
         _safe_log(
             db,
+            actor_type="user",
+            actor_id=payload.username,
             event_type="AUTH_LOGIN_FAILED",
             entity_type="user",
             entity_id=payload.username,
@@ -57,6 +59,8 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
 
     _safe_log(
         db,
+        actor_type="user",
+        actor_id=user.username,
         event_type="AUTH_LOGIN_SUCCESS",
         entity_type="user",
         entity_id=str(user.id),
@@ -110,6 +114,8 @@ def refresh(payload: dict, db: Session = Depends(get_db)):
 
     # _safe_log(
     #     db,
+    # actor_type="user",
+    # actor_id=user.username,
     #     event_type="AUTH_TOKEN_REFRESHED",
     #     entity_type="user",
     #     entity_id=str(user.id),

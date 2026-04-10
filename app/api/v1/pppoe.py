@@ -77,7 +77,7 @@ def disconnect_user(
         router_id,
         username,
         db=db,
-        requested_by=current_user.username,
+        actor_id=current_user.username,
     )
 
     if result == "ROUTER_NOT_FOUND":
@@ -110,7 +110,7 @@ def disable_user(
         router_id,
         username,
         db=db,
-        requested_by=current_user.username,
+        actor_id=current_user.username,
     )
 
     if result == "ROUTER_NOT_FOUND":
@@ -143,7 +143,7 @@ def enable_user(
         router_id,
         username,
         db=db,
-        requested_by=current_user.username,
+        actor_id=current_user.username,
     )
 
     if result == "ROUTER_NOT_FOUND":
@@ -176,7 +176,7 @@ def delete_user(
         router_id,
         username,
         db=db,
-        requested_by=current_user.username,
+        actor_id=current_user.username,
     )
 
     if result == "ROUTER_NOT_FOUND":
@@ -241,7 +241,7 @@ def create_secret(
             disabled=payload.disabled,
             router_id=payload.router,
             db=db,
-            requested_by=current_user.username,
+            actor_id=current_user.username,
         )
 
         all_successful = all(item.get('status') == 'success' for item in result)

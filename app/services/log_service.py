@@ -8,6 +8,8 @@ from app.models.log import Log
 def log_event(
     db: Session,
     *,
+    actor_type: str | None = None,
+    actor_id: str | None = None,
     event_type: str,
     entity_type: str,
     entity_id: str | None = None,
@@ -22,6 +24,8 @@ def log_event(
     synchronous SQLAlchemy sessions used in this codebase.
     """
     log = Log(
+        actor_type=actor_type,
+        actor_id=actor_id,
         event_type=event_type,
         entity_type=entity_type,
         entity_id=entity_id,
