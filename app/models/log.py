@@ -1,4 +1,4 @@
-from sqlalchemy import String,text, TIMESTAMP
+from sqlalchemy import DateTime, String,text, TIMESTAMP
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
@@ -27,7 +27,7 @@ class Log(Base):
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP,
+        DateTime(timezone=True),
         server_default=func.now(),
         nullable=False
     )
