@@ -1,11 +1,15 @@
-from fastapi import APIRouter, Body, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Body, Depends, HTTPException, UploadFile, File, Query
 import tempfile
 import os
 
 
 from app.models.user import User
 from app.security.auth import get_current_user
-from app.services.billing_reconcile_service import fetch_successful_payments_xls
+from app.services.billing_reconcile_service import (
+    fetch_bmt_payment,
+    reconcile_bmt_payments,
+    fetch_successful_payments_xls,
+)
 from app.services.billing_service import (
     bulk_isolir_from_file,
     import_billing_data,
@@ -136,4 +140,33 @@ def reconcile_billing():
         raise HTTPException(
             status_code=500,
             detail=f"Failed to reconcile payment data: {str(e)}"
+        )
+
+
+@router.post("/reconcile-bmt")
+def reconcile_bmt(
+    limit: int = Query(default=1000, ge=1, le=5000),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        payload = reconcile_bmt_payments(limit=limit)
+        return payload
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to reconcile BMT payment data: {str(e)}"
+        )
+
+
+@router.get("/bmt-payment")
+def get_bmt_payment(
+    limit: int = Query(default=100, ge=1, le=1000),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return fetch_bmt_payment(limit=limit)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch BMT payment data: {str(e)}"
         )
