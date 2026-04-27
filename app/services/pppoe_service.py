@@ -1,10 +1,28 @@
 from app.config.settings import ROUTERS
 from app.adapters.mikrotik.client import connect_router
-from app.adapters.mikrotik.pppoe import add_pppoe_secret, change_nat_to_addresses, change_pppoe_profile, delete_secret, get_pppoe_profiles, isolir_on_router,disable_secret, enable_secret, find_all_active, find_all_secret, find_secret, find_active, disconnect_active
+from app.adapters.mikrotik.pppoe import add_pppoe_secret, change_nat_to_addresses, change_pppoe_profile, delete_secret, get_pppoe_profiles, isolir_on_router,disable_secret, enable_secret, find_all_active, find_all_secret, find_secret, find_active, disconnect_active, find_active_by_caller_id, find_secret_by_last_caller_id
 from app.services.log_service import log_event
 import pandas as pd
 import numpy as np
 from sqlalchemy.orm import Session
+
+MAC_PREFIX_LENGTH = 10
+
+
+def _normalize_mac(mac_address: str | None) -> str:
+    if not mac_address:
+        return ""
+    return "".join(char for char in mac_address.lower() if char.isalnum())
+
+
+def _mac_matches(search_mac: str, candidate_mac: str | None) -> bool:
+    normalized_search = _normalize_mac(search_mac)
+    normalized_candidate = _normalize_mac(candidate_mac)
+
+    if len(normalized_search) < MAC_PREFIX_LENGTH:
+        return normalized_search and normalized_search == normalized_candidate
+
+    return normalized_candidate.startswith(normalized_search[:MAC_PREFIX_LENGTH])
 
 
 def _safe_log(db: Session | None, **kwargs):
@@ -91,6 +109,7 @@ def get_pppoe_status(username: str):
                     "profile": secrets[0].get("profile"),
                     "name": secrets[0].get("name"),
                     "password": secrets[0].get("password"),
+                    "comment": secrets[0].get("comment"),
                     "connection": {
                         "ip": active[0].get("address"),
                         "uptime": active[0].get("uptime")
@@ -107,6 +126,7 @@ def get_pppoe_status(username: str):
                     "profile": secrets[0].get("profile"),
                     "name": secrets[0].get("name"),
                     "password": secrets[0].get("password"),
+                    "comment": secrets[0].get("comment"),
                     "connection": None
                 })
 
@@ -123,6 +143,101 @@ def get_pppoe_status(username: str):
 
     return {
         "username": username,
+        "matches": matches,
+        "has_multiple_matches": len(matches) > 1
+    }
+
+def get_pppoe_status_by_mac(mac_address: str):
+    """
+    Find PPPoE secrets across all routers by MAC address.
+
+    Active sessions are matched by `caller-id`, while inactive secrets are
+    matched by `last-caller-id`.
+    """
+
+    matches = []
+
+    for router in ROUTERS:
+        api = None
+
+        try:
+            api = connect_router(router)
+
+            active_matches = [
+                active for active in find_active_by_caller_id(api)
+                if _mac_matches(mac_address, active.get("caller-id"))
+            ]
+            active_names = set()
+
+            for active in active_matches:
+                username = active.get("name")
+                if not username:
+                    continue
+
+                secrets = find_secret(api, username)
+                if not secrets:
+                    continue
+
+                active_names.add(username)
+                secret = secrets[0]
+
+                matches.append({
+                    "router": {
+                        "id": router["id"],
+                        "name": router["name"]
+                    },
+                    "secret": secret.get("disabled"),
+                    "status": "ACTIVE",
+                    "profile": secret.get("profile"),
+                    "name": secret.get("name"),
+                    "password": secret.get("password"),
+                    "comment": secret.get("comment"),
+                    "matched_mac": active.get("caller-id"),
+                    "matched_by": "caller-id",
+                    "connection": {
+                        "ip": active.get("address"),
+                        "uptime": active.get("uptime")
+                    }
+                })
+
+            inactive_matches = [
+                secret for secret in find_secret_by_last_caller_id(api)
+                if _mac_matches(mac_address, secret.get("last-caller-id"))
+            ]
+
+            for secret in inactive_matches:
+                username = secret.get("name")
+                if username in active_names:
+                    continue
+
+                matches.append({
+                    "router": {
+                        "id": router["id"],
+                        "name": router["name"]
+                    },
+                    "secret": secret.get("disabled"),
+                    "status": "INACTIVE",
+                    "profile": secret.get("profile"),
+                    "name": secret.get("name"),
+                    "password": secret.get("password"),
+                    "comment": secret.get("comment"),
+                    "matched_mac": secret.get("last-caller-id"),
+                    "matched_by": "last-caller-id",
+                    "connection": None
+                })
+
+        except Exception as e:
+            raise Exception(f"[WARN] {router['name']} unreachable: {e}")
+
+        finally:
+            if api:
+                api.close()
+
+    if not matches:
+        return None
+
+    return {
+        "mac_address": mac_address,
         "matches": matches,
         "has_multiple_matches": len(matches) > 1
     }

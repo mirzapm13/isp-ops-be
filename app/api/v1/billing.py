@@ -146,7 +146,7 @@ def reconcile_billing():
 @router.post("/reconcile-bmt")
 def reconcile_bmt(
     limit: int = Query(default=1000, ge=1, le=5000),
-    current_user: User = Depends(get_current_user),
+    # current_user: User = Depends(get_current_user),
 ):
     try:
         payload = reconcile_bmt_payments(limit=limit)
@@ -161,7 +161,7 @@ def reconcile_bmt(
 @router.get("/bmt-payment")
 def get_bmt_payment(
     limit: int = Query(default=100, ge=1, le=1000),
-    current_user: User = Depends(get_current_user),
+    # current_user: User = Depends(get_current_user),
 ):
     try:
         return fetch_bmt_payment(limit=limit)
@@ -170,3 +170,10 @@ def get_bmt_payment(
             status_code=500,
             detail=f"Failed to fetch BMT payment data: {str(e)}"
         )
+    
+@router.get("/mac")
+def get_by_mac(
+    macAddress : str,
+    current_user: User = Depends(get_current_user),
+):
+    return

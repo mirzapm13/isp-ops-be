@@ -31,7 +31,7 @@ def find_all_secret(api):
 def find_secret(api, username: str):
     return list(
         api.path("ppp", "secret")
-           .select(name, profile, disabled, id, password)
+           .select(name, profile, disabled, id, password, comment)
            .where(name == username)
     )
 
@@ -40,6 +40,18 @@ def find_active(api, username: str):
         api.path("ppp", "active")
            .select(name, uptime, address, id)
            .where(name == username)
+    )
+
+def find_active_by_caller_id(api):
+    return list(
+        api.path("ppp", "active")
+           .select(name, uptime, address, id, "caller-id")
+    )
+
+def find_secret_by_last_caller_id(api):
+    return list(
+        api.path("ppp", "secret")
+           .select(name, profile, disabled, id, password, comment, "last-caller-id")
     )
 
 def disconnect_active(api, active_id: str):
