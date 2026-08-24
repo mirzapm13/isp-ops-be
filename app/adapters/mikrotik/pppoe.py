@@ -38,7 +38,7 @@ def find_secret(api, username: str):
 def find_active(api, username: str):
     return list(
         api.path("ppp", "active")
-           .select(name, uptime, address, id)
+           .select(name, uptime, address, id, "caller-id")
            .where(name == username)
     )
 

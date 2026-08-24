@@ -110,6 +110,7 @@ def get_pppoe_status(username: str):
                     "name": secrets[0].get("name"),
                     "password": secrets[0].get("password"),
                     "comment": secrets[0].get("comment"),
+                    "matched_mac": active[0].get("caller-id"),
                     "connection": {
                         "ip": active[0].get("address"),
                         "uptime": active[0].get("uptime")

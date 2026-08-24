@@ -12,29 +12,6 @@ router = APIRouter(
     dependencies=[Depends(get_current_user)]
 )
 
-@router.get("/mac")
-def get_user_by_mac(address: str):
-    result = get_pppoe_status_by_mac(address)
-
-    if result is None:
-        raise HTTPException(
-            status_code=404,
-            detail="PPPoE user not found"
-        )
-
-    return result
-
-@router.get("/mac/{mac_address}")
-def get_user_by_mac_path(mac_address: str):
-    result = get_pppoe_status_by_mac(mac_address)
-
-    if result is None:
-        raise HTTPException(
-            status_code=404,
-            detail="PPPoE user not found"
-        )
-
-    return result
 
 @router.get("/{username}")
 def get_user(username: str):
@@ -47,6 +24,34 @@ def get_user(username: str):
         )
 
     return result
+
+@router.patch("/{username}")
+def patch_profile(
+        username: str,
+        router_id: str = Body(..., embed=True),
+        profile: str = Body(..., embed=True)
+    ):
+
+    result = change_profile(username,router_id,  profile)
+
+    if result == "ROUTER_NOT_FOUND":
+        raise HTTPException(status_code=404, detail="Router not found")
+
+    if result == "USER_NOT_AVAILABLE":
+        return {
+            "status": "NO_ACTION",
+            "message": "User is not available"
+        }
+
+    if result != "UPDATED":
+        raise HTTPException(status_code=500, detail=result)
+
+    return {
+        "status": "SUCCESS",
+        "message": "User profile updated",
+        "username": username,
+        "router_id": router_id
+    }
 
 @router.get("/profile/{router_id}")
 def get_profiles(router_id: str):
@@ -222,34 +227,6 @@ def delete_user(
         "router_id": router_id
     }
     
-@router.patch("/{username}")
-def patch_profile(
-        username: str,
-        router_id: str = Body(..., embed=True),
-        profile: str = Body(..., embed=True)
-    ):
-
-    result = change_profile(username,router_id,  profile)
-
-    if result == "ROUTER_NOT_FOUND":
-        raise HTTPException(status_code=404, detail="Router not found")
-
-    if result == "USER_NOT_AVAILABLE":
-        return {
-            "status": "NO_ACTION",
-            "message": "User is not available"
-        }
-
-    if result != "UPDATED":
-        raise HTTPException(status_code=500, detail=result)
-
-    return {
-        "status": "SUCCESS",
-        "message": "User profile updated",
-        "username": username,
-        "router_id": router_id
-    }
-
 @router.post("/secret")
 def create_secret(
     payload: PPPoESecretCreateRequest,
@@ -306,4 +283,29 @@ def remote_client(ip: str, router_id: str):
             detail=f"Error changing to addresses: {e}"
         )
     
+    return result
+
+
+@router.get("/mac")
+def get_user_by_mac(address: str):
+    result = get_pppoe_status_by_mac(address)
+
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail="PPPoE user not found"
+        )
+
+    return result
+
+@router.get("/mac/{mac_address}")
+def get_user_by_mac_path(mac_address: str):
+    result = get_pppoe_status_by_mac(mac_address)
+
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail="PPPoE user not found"
+        )
+
     return result
