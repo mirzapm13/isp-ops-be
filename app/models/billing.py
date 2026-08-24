@@ -12,6 +12,7 @@ class BillingCustomer(Base):
     id_pelanggan = Column(String, index=True,nullable=False)
     ip_secret = Column(String)
     tlp = Column(String, nullable=False)
+    alamat = Column(String)
 
     nama_pelanggan = Column(String)
     nama_langganan = Column(String)

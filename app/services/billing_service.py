@@ -1,7 +1,9 @@
-from app.adapters.billing.excel_reader import read_billing_excel
-from app.adapters.billing.column_normalize import normalize_column_name
+import os
+import tempfile
+import requests
 import re
 from decimal import Decimal, InvalidOperation
+from app.adapters.billing.column_normalize import normalize_column_name
 from app.adapters.billing.gsheet_reader import read_google_sheet
 from app.config.database import engine
 from app.models.billing import BillingCustomer
@@ -11,6 +13,7 @@ from datetime import date, timedelta
 from app.config.database import SessionLocal
 from app.models.billing import BillingCustomer
 import numpy as np
+from app.adapters.billing.excel_reader import read_billing_excel
 
 from app.services.pppoe_service import isolir_user_all_routers
 
@@ -54,7 +57,7 @@ def import_billing_data(file_path: str, filename: str):
     # Normalize column names
     df.columns = [normalize_column_name(c) for c in df.columns]
     df = df.replace({np.nan: None})
-
+    
     # Example mapping — adjust to your real columns
     records = []
     for _, row in df.iterrows():
@@ -62,6 +65,7 @@ def import_billing_data(file_path: str, filename: str):
         "id_pelanggan": row.get("id_pelanggan"),
         "ip_secret": row.get("ip_secret"),
         "tlp": row.get("tlp"),
+        "alamat": row.get("alamat"),
 
         "nama_pelanggan": row.get("nama_pelanggan"),
         "nama_langganan": row.get("nama_langganan"),
@@ -308,3 +312,39 @@ def insert_to_db(df):
             )
     except Exception as e:
         raise e
+
+
+def import_billing_from_url(url: str | None = None) -> dict:
+    """
+    Download billing export file from a remote URL (defaulting to EBILLING_EXPORT_URL or passed url),
+    parse the file and replace existing billing records in the database.
+    """
+    target_url = url or os.getenv(
+        "EBILLING_EXPORT_URL",
+        "https://e.ebilling.id/export/data_pelanggan_admin.php?data_account=23213&data_lokasi=12719"
+    )
+
+    response = requests.get(target_url, timeout=60)
+    response.raise_for_status()
+
+    with tempfile.NamedTemporaryFile(suffix=".xls", delete=False) as tmp:
+        tmp.write(response.content)
+        tmp_path = tmp.name
+
+    try:
+        filename = "ebilling_export.xls"
+        records = import_billing_data(tmp_path, filename)
+
+        if not records:
+            raise ValueError("No valid billing records found in downloaded file")
+
+        insert_billing_records(records)
+
+        return {
+            "status": "OK",
+            "rows_imported": len(records),
+            "source_url": target_url
+        }
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Body, Depends, HTTPException, UploadFile, File, Query
+from typing import Optional
 import tempfile
 import os
 
@@ -13,6 +14,7 @@ from app.services.billing_reconcile_service import (
 from app.services.billing_service import (
     bulk_isolir_from_file,
     import_billing_data,
+    import_billing_from_url,
     insert_billing_records,
     get_billing_by_ip_secret,
     isolir_from_gsheet
@@ -54,6 +56,17 @@ async def import_billing(file: UploadFile = File(...)):
     finally:
         os.unlink(tmp_path)
 
+@router.post("/cron-import")
+def cron_import_billing(url: Optional[str] = Query(default=None, description="Optional custom export URL to fetch billing data from")):
+    try:
+        return import_billing_from_url(url=url)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch and import billing data: {str(e)}"
+        )
+
+
 @router.get("/customers/{ip_secret}")
 def get_billing_customer(ip_secret: str, current_user: User = Depends(get_current_user)):
     rows = get_billing_by_ip_secret(ip_secret)
@@ -68,6 +81,8 @@ def get_billing_customer(ip_secret: str, current_user: User = Depends(get_curren
                 "ip_secret": r.ip_secret,
                 "nama_pelanggan": r.nama_pelanggan,
                 "nama_langganan": r.nama_langganan,
+                "alamat": r.alamat,
+                "tlp": r.tlp,
                 "harga": r.harga,
                 "status_langganan": r.status_langganan,
                 "jatuh_tempo": r.jatuh_tempo,
