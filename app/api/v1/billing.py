@@ -19,6 +19,7 @@ from app.services.billing_service import (
     get_billing_by_ip_secret,
     isolir_from_gsheet
 )
+from app.services.receipt_broadcast_service import process_receipt_broadcast
 
 router = APIRouter(
     prefix="/billing",
@@ -192,3 +193,27 @@ def get_by_mac(
     current_user: User = Depends(get_current_user),
 ):
     return
+
+
+@router.post("/send-receipts")
+def send_payment_receipts(
+    data_account: str = Query(default="23213", description="Data account parameter for e.ebilling.id"),
+    tglskg: Optional[str] = Query(default=None, description="First date of month YYYY-MM-01 (default: current month)"),
+    url: Optional[str] = Query(default=None, description="Custom Excel URL if needed"),
+    dry_run: bool = Query(default=False, description="If true, parse and check idempotency without sending WhatsApp"),
+    limit: Optional[int] = Query(default=None, description="Optional limit to process only top N records (e.g. 10)"),
+):
+    try:
+        return process_receipt_broadcast(
+            data_account=data_account,
+            tglskg=tglskg,
+            url=url,
+            dry_run=dry_run,
+            limit=limit,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to process receipt broadcast: {str(e)}"
+        )
+
