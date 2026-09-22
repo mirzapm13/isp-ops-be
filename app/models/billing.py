@@ -35,6 +35,8 @@ class BillingCustomer(Base):
             "ip_secret": self.ip_secret,
             "nama_pelanggan": self.nama_pelanggan,
             "nama_langganan": self.nama_langganan,
+            "alamat": self.alamat,
+            "tlp": self.tlp,
             "harga": self.harga,
             "status_langganan": self.status_langganan,
             "jatuh_tempo": self.jatuh_tempo,

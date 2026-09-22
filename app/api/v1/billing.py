@@ -17,6 +17,7 @@ from app.services.billing_service import (
     import_billing_from_url,
     insert_billing_records,
     get_billing_by_ip_secret,
+    get_billing_customers_paginated,
     isolir_from_gsheet
 )
 from app.services.receipt_broadcast_service import process_receipt_broadcast
@@ -65,6 +66,26 @@ def cron_import_billing(url: Optional[str] = Query(default=None, description="Op
         raise HTTPException(
             status_code=500,
             detail=f"Failed to fetch and import billing data: {str(e)}"
+        )
+
+
+@router.get("/customers")
+def get_billing_customers(
+    search: Optional[str] = Query(default=None, description="Search by id_pelanggan, ip_secret, nama_pelanggan, or tlp"),
+    page: int = Query(default=1, ge=1, description="Page number"),
+    limit: int = Query(default=20, ge=1, le=100, description="Items per page"),
+    # current_user: User = Depends(get_current_user),
+):
+    try:
+        return get_billing_customers_paginated(
+            search=search,
+            page=page,
+            limit=limit,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch billing customers: {str(e)}"
         )
 
 

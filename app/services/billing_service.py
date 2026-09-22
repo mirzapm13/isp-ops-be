@@ -2,20 +2,70 @@ import os
 import tempfile
 import requests
 import re
+import math
+from typing import Any
 from decimal import Decimal, InvalidOperation
 from app.adapters.billing.column_normalize import normalize_column_name
 from app.adapters.billing.gsheet_reader import read_google_sheet
 from app.config.database import engine
 from app.models.billing import BillingCustomer
-from sqlalchemy import text, types
+from sqlalchemy import text, types, or_
 import pandas as pd
 from datetime import date, timedelta
 from app.config.database import SessionLocal
-from app.models.billing import BillingCustomer
 import numpy as np
 from app.adapters.billing.excel_reader import read_billing_excel
 
 from app.services.pppoe_service import isolir_user_all_routers
+
+def get_billing_customers_paginated(
+    *,
+    search: str | None = None,
+    page: int = 1,
+    limit: int = 20,
+) -> dict[str, Any]:
+    """
+    Retrieve paginated billing customers with optional search filtering by
+    id_pelanggan, ip_secret, nama_pelanggan, or tlp.
+    """
+    db = SessionLocal()
+    try:
+        query = db.query(BillingCustomer)
+
+        if search and search.strip():
+            term = f"%{search.strip()}%"
+            query = query.filter(
+                or_(
+                    BillingCustomer.id_pelanggan.ilike(term),
+                    BillingCustomer.ip_secret.ilike(term),
+                    BillingCustomer.nama_pelanggan.ilike(term),
+                    BillingCustomer.tlp.ilike(term),
+                )
+            )
+
+        total = query.count()
+        total_pages = math.ceil(total / limit) if total > 0 else 0
+
+        customers = (
+            query
+            .order_by(BillingCustomer.id.asc())
+            .offset((page - 1) * limit)
+            .limit(limit)
+            .all()
+        )
+
+        return {
+            "data": [r.to_dict() for r in customers],
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total,
+                "total_pages": total_pages,
+            }
+        }
+    finally:
+        db.close()
+
 
 def get_all_billing():
     """
