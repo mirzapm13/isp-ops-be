@@ -2,6 +2,7 @@ from app.config.settings import ROUTERS
 from app.adapters.mikrotik.client import connect_router
 from app.adapters.mikrotik.pppoe import add_pppoe_secret, change_nat_to_addresses, change_pppoe_profile, delete_secret, get_pppoe_profiles, isolir_on_router,disable_secret, enable_secret, find_all_active, find_all_secret, find_secret, find_active, disconnect_active, find_active_by_caller_id, find_secret_by_last_caller_id
 from app.services.log_service import log_event
+import difflib
 import pandas as pd
 import numpy as np
 from sqlalchemy.orm import Session
@@ -23,6 +24,25 @@ def _mac_matches(search_mac: str, candidate_mac: str | None) -> bool:
         return normalized_search and normalized_search == normalized_candidate
 
     return normalized_candidate.startswith(normalized_search[:MAC_PREFIX_LENGTH])
+
+
+def _mac_similarity_score(search_mac: str, candidate_mac: str | None) -> tuple[int, int, float]:
+    s = _normalize_mac(search_mac)
+    c = _normalize_mac(candidate_mac)
+    if not s or not c:
+        return (0, 0, 0.0)
+
+    exact_match = 1 if s == c else 0
+
+    prefix_len = 0
+    for char_s, char_c in zip(s, c):
+        if char_s == char_c:
+            prefix_len += 1
+        else:
+            break
+
+    ratio = difflib.SequenceMatcher(None, s, c).ratio()
+    return (exact_match, prefix_len, ratio)
 
 
 def _safe_log(db: Session | None, **kwargs):
@@ -236,6 +256,14 @@ def get_pppoe_status_by_mac(mac_address: str):
 
     if not matches:
         return None
+
+    matches.sort(
+        key=lambda m: (
+            *_mac_similarity_score(mac_address, m.get("matched_mac")),
+            1 if m.get("status") == "ACTIVE" else 0,
+        ),
+        reverse=True,
+    )
 
     return {
         "mac_address": mac_address,
