@@ -40,6 +40,7 @@ def get_billing_customers_paginated(
                     BillingCustomer.ip_secret.ilike(term),
                     BillingCustomer.nama_pelanggan.ilike(term),
                     BillingCustomer.tlp.ilike(term),
+                    BillingCustomer.alamat.ilike(term),
                 )
             )
 
