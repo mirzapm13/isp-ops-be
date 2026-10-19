@@ -1,10 +1,24 @@
-import requests
-from typing import Any, Dict, Optional
 import os
+import re
+from typing import Any, Dict, Optional
+from urllib.parse import quote
+import requests
 
 
 class SmartOLTError(Exception):
     pass
+
+
+def _clean_response_error(text: str, max_len: int = 200) -> str:
+    if not text:
+        return "Empty error response"
+    cleaned = re.sub(r"<style[^>]*>.*?</style>", " ", text, flags=re.DOTALL | re.IGNORECASE)
+    cleaned = re.sub(r"<script[^>]*>.*?</script>", " ", cleaned, flags=re.DOTALL | re.IGNORECASE)
+    cleaned = re.sub(r"<[^>]+>", " ", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    if len(cleaned) > max_len:
+        return cleaned[: max_len - 3] + "..."
+    return cleaned
 
 
 class SmartOLTAdapter:
@@ -40,8 +54,9 @@ class SmartOLTAdapter:
         )
 
         if not response.ok:
+            error_detail = _clean_response_error(response.text)
             raise SmartOLTError(
-                f"SmartOLT API error {response.status_code}: {response.text}"
+                f"SmartOLT API error {response.status_code}: {error_detail}"
             )
 
         return response.json()
@@ -73,8 +88,10 @@ class SmartOLTAdapter:
     #     return self._request("DELETE", f"onus/{onu_id}")
     
     def disable_onu(self, onu_id):
-        return self._request("POST", f"/api/onu/disable/{onu_id}")
+        safe_onu_id = quote(str(onu_id).strip(), safe="")
+        return self._request("POST", f"/api/onu/disable/{safe_onu_id}")
     
     def enable_onu(self, onu_id):
-        return self._request("POST", f"/api/onu/enable/{onu_id}")
+        safe_onu_id = quote(str(onu_id).strip(), safe="")
+        return self._request("POST", f"/api/onu/enable/{safe_onu_id}")
 

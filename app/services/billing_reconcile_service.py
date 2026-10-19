@@ -124,16 +124,33 @@ def _extract_id_pelanggan_from_ket(ket: str | None) -> str | None:
     return left or None
 
 
+def _format_error_message(err: Exception, max_len: int = 250) -> str:
+    raw = str(err) if err is not None else "Unknown error"
+    cleaned = re.sub(r"<style[^>]*>.*?</style>", " ", raw, flags=re.DOTALL | re.IGNORECASE)
+    cleaned = re.sub(r"<script[^>]*>.*?</script>", " ", cleaned, flags=re.DOTALL | re.IGNORECASE)
+    cleaned = re.sub(r"<[^>]+>", " ", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    if not cleaned:
+        cleaned = "Unknown error"
+    if len(cleaned) > max_len:
+        return cleaned[: max_len - 3] + "..."
+    return cleaned
+
+
 def _activate_ip_secret(
     ip_secret: str,
     adapter: SmartOLTAdapter | None = None,
 ) -> SmartOLTAdapter | None:
-    if len(str(ip_secret)) < 10:
+    cleaned_secret = str(ip_secret or "").strip()
+    if not cleaned_secret:
+        raise ValueError("Empty ip_secret")
+
+    if len(cleaned_secret) < 10:
         for router in ROUTERS:
             api = None
             try:
                 api = connect_router(router)
-                secrets = find_secret(api, ip_secret)
+                secrets = find_secret(api, cleaned_secret)
                 if not secrets:
                     continue
 
@@ -144,9 +161,12 @@ def _activate_ip_secret(
                     api.close()
         return adapter
 
+    if not re.fullmatch(r"[A-Za-z0-9]+", cleaned_secret):
+        raise ValueError(f"Invalid ONU SN format for ip_secret: {cleaned_secret!r}")
+
     if adapter is None:
         adapter = SmartOLTAdapter()
-    adapter.enable_onu(onu_id=ip_secret)
+    adapter.enable_onu(onu_id=cleaned_secret)
     return adapter
 
 
@@ -346,7 +366,7 @@ def reconcile_bmt_payments(limit: int = 1000) -> dict:
                     update_query_error,
                     {
                         "value": row["payment_fingerprint"],
-                        "error": str(e),
+                        "error": _format_error_message(e),
                     },
                 )
             payload["summary"]["failed"].append(row["ip_secret"])
@@ -517,7 +537,7 @@ def fetch_successful_payments_xls() :
                 with engine.begin() as conn:
                     conn.execute(update_query_error, {
                         "value": row["payment_fingerprint"],
-                        "error": str(e)
+                        "error": _format_error_message(e)
                     })
                 
                 payload["summary"]["failed"].append(row['ip_secret'])
