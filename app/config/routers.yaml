@@ -1,27 +1,34 @@
 - id: pop-1
-  name: CALM-E1-OFC
-  host: 115.84.175.4
-  port: 14917
+  name: ${POP1_CORE_NAME}
+  host: ${POP1_CORE_HOST}
+  port: ${POP1_CORE_PORT}
   username: ${POP1_CORE_USERNAME}
   password: ${POP1_CORE_PASSWORD}
 
 - id: pop-2
-  name: CALM-E2-OFC
-  host: 115.84.175.2
-  port: 11730
+  name: ${POP2_CORE_NAME}
+  host: ${POP2_CORE_HOST}
+  port: ${POP2_CORE_PORT}
   username: ${POP2_CORE_USERNAME}
   password: ${POP2_CORE_PASSWORD}
 
 - id: pop-3
-  name: CALM-E3-OFC
-  host: 160.191.173.2
-  port: 4918
+  name: ${POP3_CORE_NAME}
+  host: ${POP3_CORE_HOST}
+  port: ${POP3_CORE_PORT}
   username: ${POP3_CORE_USERNAME}
   password: ${POP3_CORE_PASSWORD}
 
 - id: pop-4
-  name: CALM-E4-SRH
-  host: 160.191.173.5
-  port: 3369
+  name: ${POP4_CORE_NAME}
+  host: ${POP4_CORE_HOST}
+  port: ${POP4_CORE_PORT}
   username: ${POP4_CORE_USERNAME}
   password: ${POP4_CORE_PASSWORD}
+
+- id: pop-5
+  name: ${POP5_CORE_NAME}
+  host: ${POP5_CORE_HOST}
+  port: ${POP5_CORE_PORT}
+  username: ${POP5_CORE_USERNAME}
+  password: ${POP5_CORE_PASSWORD}
