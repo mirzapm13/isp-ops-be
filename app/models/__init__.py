@@ -9,3 +9,4 @@ from .role_permission import role_permissions
 from .log import Log
 from .billing import BillingCustomer
 from .payment_receipt_log import PaymentReceiptLog
+from .wa_broadcast_log import WaBroadcastRun, WaBroadcastLog
