@@ -26,11 +26,11 @@ def _mac_matches(search_mac: str, candidate_mac: str | None) -> bool:
     return normalized_candidate.startswith(normalized_search[:MAC_PREFIX_LENGTH])
 
 
-def _mac_similarity_score(search_mac: str, candidate_mac: str | None) -> tuple[int, int, float]:
+def _mac_similarity_score(search_mac: str, candidate_mac: str | None) -> tuple[int, int, int, float]:
     s = _normalize_mac(search_mac)
     c = _normalize_mac(candidate_mac)
     if not s or not c:
-        return (0, 0, 0.0)
+        return (0, 0, -10**20, 0.0)
 
     exact_match = 1 if s == c else 0
 
@@ -41,8 +41,17 @@ def _mac_similarity_score(search_mac: str, candidate_mac: str | None) -> tuple[i
         else:
             break
 
+    try:
+        hex_diff = abs(int(s, 16) - int(c, 16))
+    except ValueError:
+        hex_diff = sum(
+            abs(int(cs, 16) - int(cc, 16))
+            for cs, cc in zip(s, c)
+            if cs in "0123456789abcdef" and cc in "0123456789abcdef"
+        ) or 10**20
+
     ratio = difflib.SequenceMatcher(None, s, c).ratio()
-    return (exact_match, prefix_len, ratio)
+    return (exact_match, prefix_len, -hex_diff, ratio)
 
 
 def _safe_log(db: Session | None, **kwargs):
