@@ -7,7 +7,7 @@ from typing import Any, Dict
 TEMPLATES: Dict[str, Dict[str, Any]] = {
         "tagihan_pembayaran": {
         "name": "tagihan_pembayaran",
-        "description": "tagihan pembayaran jatuh tempo tgl 1",
+        "description": "tagihan_pembayaran (tagihan pembayaran jatuh tempo tgl 1)",
         "language_code": "id",
         "phone_column": "Tlp",
         "header_columns": [],
