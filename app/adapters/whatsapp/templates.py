@@ -5,9 +5,9 @@ Predefined WhatsApp Broadcast Templates Configuration.
 from typing import Any, Dict
 
 TEMPLATES: Dict[str, Dict[str, Any]] = {
-    "isolir_info": {
-        "name": "isolir_info",
-        "description": "isolir_info (Isolir Notification & Payment Reminder)",
+        "tagihan_pembayaran": {
+        "name": "tagihan_pembayaran",
+        "description": "tagihan pembayaran jatuh tempo tgl 1",
         "language_code": "id",
         "phone_column": "Tlp",
         "header_columns": [],
@@ -33,9 +33,9 @@ TEMPLATES: Dict[str, Dict[str, Any]] = {
             }
         ],
     },
-    "test_template": {
-        "name": "test_template",
-        "description": "test_template (Isolir Notification & Payment Reminder)",
+    "isolir_info": {
+        "name": "isolir_info",
+        "description": "isolir_info (Isolir Notification & Payment Reminder)",
         "language_code": "id",
         "phone_column": "Tlp",
         "header_columns": [],
