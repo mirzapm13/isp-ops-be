@@ -33,9 +33,37 @@ TEMPLATES: Dict[str, Dict[str, Any]] = {
             }
         ],
     },
+        "ingatkan_pembayaran":{
+        "name": "ingatkan_pembayaran",
+        "description": "ingatkan_pembayaran (ingatkan pembayaran sebelum tanggal 15)",
+        "language_code": "id",
+        "phone_column": "Tlp",
+        "header_columns": [],
+        "body_columns": [
+            "ID Pelanggan",
+            "Nama Pelanggan",
+            "Alamat",
+            "Nama Langganan",
+            "Tanggal Jatuh Tempo",
+            "Nominal Pembayaran",
+            "__NO_VALUE__",
+            "Nominal Pembayaran",
+            "Link Tripay",
+        ],
+        "currency_columns": [
+            "Nominal Pembayaran",
+        ],
+        "buttons": [
+            {
+                "index": 0,
+                "sub_type": "url",
+                "column": "Link Tripay",
+            }
+        ],
+    },
     "isolir_info": {
         "name": "isolir_info",
-        "description": "isolir_info (Isolir Notification & Payment Reminder)",
+        "description": "isolir_info (Notifikasi Isolir)",
         "language_code": "id",
         "phone_column": "Tlp",
         "header_columns": [],
