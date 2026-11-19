@@ -39,3 +39,10 @@
   port: ${POP6_CORE_PORT}
   username: ${POP6_CORE_USERNAME}
   password: ${POP6_CORE_PASSWORD}
+
+- id: pop-7
+  name: ${POP7_CORE_NAME}
+  host: ${POP7_CORE_HOST}
+  port: ${POP7_CORE_PORT}
+  username: ${POP7_CORE_USERNAME}
+  password: ${POP7_CORE_PASSWORD}
