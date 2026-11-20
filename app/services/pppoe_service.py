@@ -162,7 +162,21 @@ def get_pppoe_status(username: str):
 
         except Exception as e:
             # Router down should not break the whole lookup
-            raise f"[WARN] {router['name']} unreachable: {e}"
+            # raise f"[WARN] {router['name']} unreachable: {e}"
+            matches.append({
+                "router": {
+                    "id": router["id"],
+                    "name": router["name"]
+                },
+                "secret": "UNREACHABLE",
+                "status": "UNREACHABLE",
+                "profile": "UNREACHABLE",
+                "name": "UNREACHABLE",
+                "password": "UNREACHABLE",
+                "comment": "UNREACHABLE",
+                "connection": None
+            })
+            
 
         finally:
             if api:
